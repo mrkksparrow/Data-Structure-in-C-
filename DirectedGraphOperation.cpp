@@ -18,6 +18,11 @@ class Graph {
         void levelOrder (int, int);
         void kosarajuSCC ();
         void DFSutil (int, map<int, vector<int>>&);
+        void topologicalSort ();
+        void topologicalSortUtil (stack <int>&, int);
+        void tarjanInitialize (map <int, pair<int, int>>&, map<int, bool>&);
+        void tarjanAlgoUtil (int, stack<int>&, map<int, pair<int, int>>&, map<int, bool>&);
+        void tarjanAlgo ();
         void displayGraph ();
 
 };
@@ -196,6 +201,114 @@ void Graph::kosarajuSCC (){
     }
 }
 
+void Graph::topologicalSortUtil (stack <int>& topo, int temp){
+    visited[temp] = true;
+    auto it = nodemap.find(temp);
+    for(auto &i : it->second){
+        if (!visited[i]){
+            topologicalSortUtil (topo, i);
+        }
+    }
+    topo.push(temp);
+}
+
+void Graph::topologicalSort (){
+    stack <int> topo;
+    for (auto it=nodemap.begin(); it!=nodemap.end(); it++){
+        if(!visited[it->first]){
+            topologicalSortUtil (topo, it->first);
+        }
+    }
+
+    while(!topo.empty()){
+        cout<<topo.top()<<" ";
+        topo.pop();
+    }
+    cout<<endl;
+    /*
+    stack <int> dfs;
+    stack <int> shift;
+    queue <int> topo;
+    for (auto it=nodemap.begin(); it!=nodemap.end(); it++){
+        if(!visited[it->first]){
+            dfs.push(it->first);
+            visited[it->first] = true;
+            while(!dfs.empty()){
+                int temp = dfs.top();
+                dfs.pop();
+                shift.push(temp);
+                auto itr = nodemap.find(temp);
+                for(auto &i : it->second){
+                    if(!visited[i]){
+                        visited[i] = true;
+                        dfs.push(i);
+                    }
+                }
+            }
+            while(!shift.empty()){
+                topo.push(shift.top());
+                shift.pop();
+            }
+        }
+    }
+    while(!topo.empty()){
+        cout<<topo.front()<<" ";
+        topo.pop();
+    }
+    */
+}
+
+void Graph::tarjanInitialize (map <int, pair<int, int>>& ldmap, map<int, bool>& instack){
+    for (auto it=nodemap.begin(); it!=nodemap.end(); it++){
+        ldmap[it->first] = make_pair(-1, -1);
+        instack[it->first] = false;
+    }
+}
+
+void Graph::tarjanAlgoUtil (int temp, stack<int>& tarjan, map<int, pair<int, int>>& ldmap, map<int, bool>& instack){
+    static int timer = 0;
+    ldmap[temp] = make_pair(timer, timer);
+    tarjan.push(temp);
+    instack[temp] = true;
+    timer++;
+
+    auto it = nodemap.find(temp);
+    for(auto &i : it->second){
+        if(ldmap[i].first==-1){
+            tarjanAlgoUtil(i, tarjan, ldmap, instack);
+            ldmap[temp].second = min(ldmap[temp].second, ldmap[i].second);
+        }
+        else if(instack[i]){
+            ldmap[temp].second = min(ldmap[temp].second, ldmap[i].first);
+        }
+    }
+
+    if(ldmap[temp].second==ldmap[temp].first){
+        while (tarjan.top()!=temp){
+            cout<<tarjan.top()<<" ";
+            instack[tarjan.top()] = false;
+            tarjan.pop();
+        }
+        cout<<tarjan.top()<<endl;
+        instack[tarjan.top()] = false;
+        tarjan.pop();
+    }
+}
+
+void Graph::tarjanAlgo (){
+    stack <int> tarjan;
+    map <int, pair<int, int>> ldmap;
+    map <int, bool> instack;
+
+    tarjanInitialize (ldmap, instack);
+    for (auto it = ldmap.begin(); it!=ldmap.end(); it++){
+        if(it->second.second==-1){
+            tarjanAlgoUtil(it->first, tarjan, ldmap, instack);
+        }
+    }
+    
+}
+
 void Graph::displayGraph (){
     for (auto it=nodemap.begin(); it!=nodemap.end(); it++){
         cout<<it->first<<" -> ";
@@ -227,9 +340,11 @@ int main (){
             <<"2. Add Edge connection"<<endl
             <<"3. Depth First Search"<<endl
             <<"4. Breath First Search"<<endl
-            <<"5. Connected Components"<<endl
-            <<"6. Get elements in level"<<endl
-            <<"7. Display Graph"<<endl
+            <<"5. Connected Components - Kosaraju"<<endl
+            <<"6. Connected Components - Tarjan"<<endl
+            <<"7. Get elements in level"<<endl
+            <<"8. Topological Sort"<<endl
+            <<"9. Display Graph"<<endl
             <<"0. Exit"<<endl;
 
         cin >> choice;
@@ -272,21 +387,35 @@ int main (){
             }
 
             case 5:{
+                cout<<"Stongly Connected Component [Kosaraju] : "<<endl;
                 root.initializeVisited ();
                 root.kosarajuSCC ();
                 break ;
             }
 
             case 6:{
-                cout<<"Enter the start node and final node to find its level [suggestion: 1 as start node] : "<<endl;
-                int start, node;
-                cin>>start>>node;
-                root.initializeVisited ();
-                root.levelOrder(start, node);
+                cout<<"Stongly Connected Component [Tarjan] : "<<endl;
+                root.tarjanAlgo ();
                 break ;
             }
 
             case 7:{
+                cout<<"Enter the start node and final node to find its level [suggestion: 1 as start node] : "<<endl;
+                int start, node;
+                cin>>start>>node;
+                root.initializeVisited ();
+                root.levelOrder (start, node);
+                break ;
+            }
+
+            case 8:{
+                cout<<"Topological Sort of the Graph : \t";
+                root.initializeVisited ();
+                root.topologicalSort ();
+                break ;
+            }
+
+            case 9:{
                 cout<<"Graph nodes and their connection : "<<endl;
                 root.displayGraph ();
                 break ;
